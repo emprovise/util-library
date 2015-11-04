@@ -13,47 +13,47 @@ import java.util.zip.ZipOutputStream;
 
 public class ZipUtil {
 
-	final static int BUFFER = 2048;
+    final static int BUFFER = 2048;
 
     private static void addToArchive(File srcFile, String destinationPath) throws IOException {
-		FileInputStream fileStream = new FileInputStream(srcFile);
-    	BufferedInputStream bufferedStream = new BufferedInputStream(fileStream, BUFFER);
+        FileInputStream fileStream = new FileInputStream(srcFile);
+        BufferedInputStream bufferedStream = new BufferedInputStream(fileStream, BUFFER);
 
-		FileOutputStream destStream = new FileOutputStream(new File(destinationPath + ".zip"));
-		ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(destStream));
+        FileOutputStream destStream = new FileOutputStream(new File(destinationPath + ".zip"));
+        ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(destStream));
 
-    	byte data[] = new byte[BUFFER];
+        byte data[] = new byte[BUFFER];
         ZipEntry entry = new ZipEntry(srcFile.getName());
-        out.putNextEntry(entry);        
+        out.putNextEntry(entry);
         int count;
         while ((count = bufferedStream.read(data, 0, BUFFER)) != -1) {
             out.write(data, 0, count);
             out.flush();
         }
 
-		out.close();
+        out.close();
     }
-    
-    public static byte[] archiveToBytes(byte[][] bytes, String[] filenames) throws IOException {
-    	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    	ZipOutputStream zos = new ZipOutputStream(baos);
-    	String filename = null;
 
-    	for (int i = 0; i < bytes.length; i++) {
-    		if(bytes[i] != null) {
-        		if(i < filenames.length && filenames[i] != null) {
-        			filename = filenames[i];
-        		}
-            	ZipEntry entry = new ZipEntry(filename);
-            	entry.setSize(bytes[i].length);
-            	zos.putNextEntry(entry);
-            	zos.write(bytes[i]);
-    		}
-		}
-    	
-    	zos.closeEntry();
-    	zos.close();
-    	return baos.toByteArray();
+    public static byte[] archiveToBytes(byte[][] bytes, String[] filenames) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ZipOutputStream zos = new ZipOutputStream(baos);
+        String filename = null;
+
+        for (int i = 0; i < bytes.length; i++) {
+            if (bytes[i] != null) {
+                if (i < filenames.length && filenames[i] != null) {
+                    filename = filenames[i];
+                }
+                ZipEntry entry = new ZipEntry(filename);
+                entry.setSize(bytes[i].length);
+                zos.putNextEntry(entry);
+                zos.write(bytes[i]);
+            }
+        }
+
+        zos.closeEntry();
+        zos.close();
+        return baos.toByteArray();
     }
- }  
+}
  

@@ -19,7 +19,7 @@ public class EnumUtil {
     }
 
     public static <T extends Enum<T>> EnumSet<T> copyOf(Class<T> clazz, Collection<T> items) {
-        if(items != null && !items.isEmpty()) {
+        if (items != null && !items.isEmpty()) {
             return EnumSet.copyOf(items);
         }
         return EnumSet.noneOf(clazz);
@@ -47,6 +47,6 @@ public class EnumUtil {
                 throw new RuntimeException(e);
             }
         }
-        return  names;
+        return names;
     }
 }

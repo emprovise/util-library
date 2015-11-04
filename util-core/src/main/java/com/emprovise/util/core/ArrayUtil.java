@@ -1,4 +1,4 @@
-package utility;
+package com.emprovise.util.core;
 
 import java.util.ArrayList;
 import java.util.Collection;
