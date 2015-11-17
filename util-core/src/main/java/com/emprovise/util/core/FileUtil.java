@@ -65,6 +65,40 @@ public class FileUtil {
     }
 
     /**
+     * Standard method to read file into binary array. Other alternatives are as below:
+     * <p><ul>
+     * <li>Java 7 File I/O: java.nio.file.Files.readAllBytes(path)</li>
+     * <li>Google Guava: Files.toByteArray(file)</li>
+     * <li>ByteStreams: ByteStreams.toByteArray(filestream)</li>
+     * <li>IO Utils: IOUtils.toByteArray(fileLocation)</li>
+     * </ul><p>
+     *
+     * @see <a href="http://www.leveluplunch.com/java/examples/convert-file-to-byte-array/">http://www.leveluplunch.com/java/examples/convert-file-to-byte-array/</a>
+     *
+     * @param fileName The full name of the file to be read including the path if file is located outside the class path.
+     * @return {@link byte[]}
+     * Binary array read from the file.
+     * @throws IOException
+     */
+    public byte[] readFileToByteArray(String fileName) throws IOException {
+
+        InputStream inputStream = null;
+
+        try {
+            File inputFile = new File(fileName);
+            byte[] bytes = new byte[(int) inputFile.length()];
+
+            inputStream = new FileInputStream(inputFile);
+            inputStream.read(bytes);
+            return bytes;
+        } finally {
+            if(inputStream != null) {
+                inputStream.close();
+            }
+        }
+    }
+
+    /**
      * Reads the specified value of the parameter or the property from the text file.
      *
      * @param txtFile   The full name of the file to be read including the path if file is located outside the class path.
