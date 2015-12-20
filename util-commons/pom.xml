@@ -75,7 +75,6 @@
 			<artifactId>json</artifactId>
 			<version>20150729</version>
 		</dependency>
-
 	</dependencies>
 
 	<build>
