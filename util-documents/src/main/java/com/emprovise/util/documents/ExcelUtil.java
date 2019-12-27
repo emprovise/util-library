@@ -8,16 +8,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.hssf.usermodel.HSSFDataFormat;
 import org.apache.poi.hssf.usermodel.HSSFHeader;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.CreationHelper;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.Header;
-import org.apache.poi.ss.usermodel.Hyperlink;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
@@ -220,22 +214,19 @@ public class ExcelUtil {
 		short format = 0;
 		
 		if(value == null) {
-			cell.setCellType(Cell.CELL_TYPE_BLANK);
+			cell.setBlank();
 			cell.setCellValue("");
 		}
 		else if(value instanceof Integer || value instanceof Long ) {
-			cell.setCellType(Cell.CELL_TYPE_NUMERIC);
 			cell.setCellValue(Long.parseLong(value.toString()));
 			format = HSSFDataFormat.getBuiltinFormat("0");
 		}
 		else if(value instanceof Float || value instanceof Double ) {
-			cell.setCellType(Cell.CELL_TYPE_NUMERIC);
 			cell.setCellValue(Double.parseDouble(value.toString()));
 			format = HSSFDataFormat.getBuiltinFormat("0.00");
 		}
 		else if(value instanceof Boolean ){
-			cell.setCellType(Cell.CELL_TYPE_BOOLEAN);
-			cell.setCellValue(value.toString());
+			cell.setCellValue((Boolean)value);
 		}
 		else if(value instanceof Date){
 			cell.setCellValue((Date) value);
@@ -243,19 +234,15 @@ public class ExcelUtil {
 		}
 		else {
 			if(value.toString().matches(NUMBER_FORMAT)){
-				cell.setCellType(Cell.CELL_TYPE_NUMERIC);
 				cell.setCellValue(Long.parseLong(value.toString()));
 				format = HSSFDataFormat.getBuiltinFormat("0");
 			}else if(value.toString().matches(DECIMAL_FORMAT)){
-				cell.setCellType(Cell.CELL_TYPE_NUMERIC);
 				cell.setCellValue(Double.parseDouble(value.toString()));
 				
 			}else if(Boolean.TRUE.toString().equalsIgnoreCase(value.toString()) || Boolean.FALSE.toString().equalsIgnoreCase(value.toString())){
-				cell.setCellType(Cell.CELL_TYPE_BOOLEAN);
-				cell.setCellValue(value.toString());
+				cell.setCellValue(Boolean.parseBoolean(value.toString()));
 
 			}else{
-				cell.setCellType(Cell.CELL_TYPE_STRING);
 				cell.setCellValue(value.toString());
 			}
 		}
@@ -293,7 +280,7 @@ public class ExcelUtil {
 					Row row = currentWorkSheet.getRow(rowIndex);
 
 					if (row != null && row.getCell(1) != null) {
-						if(row.getCell(1).getCellType() == Cell.CELL_TYPE_NUMERIC){
+						if(row.getCell(1).getCellType() == CellType.NUMERIC){
 							length = String.valueOf(row.getCell(1).getNumericCellValue()).length();
 						} else {
 							length = row.getCell(1).getStringCellValue().length();
@@ -344,7 +331,7 @@ public class ExcelUtil {
 		}
 		
 		Cell cell = row.createCell(cellNumber);
-	    cell.setCellType(Cell.CELL_TYPE_FORMULA);
+	    cell.setCellFormula(CellType.FORMULA.toString());
 	    cell.setCellStyle(style);
 	    
 	    String fromCellAddress = getCellAddress(fromRowNumber, sumColumnNumber);
@@ -464,9 +451,9 @@ public class ExcelUtil {
 			style.setFont(font);
 		}
 		
-		if(alignment == CellStyle.ALIGN_LEFT || alignment == CellStyle.ALIGN_CENTER || alignment == CellStyle.ALIGN_RIGHT || 
-		   alignment == CellStyle.ALIGN_FILL || alignment == CellStyle.ALIGN_JUSTIFY || alignment == CellStyle.ALIGN_CENTER_SELECTION) {
-			style.setAlignment(alignment);
+		if(alignment == HorizontalAlignment.LEFT.getCode() || alignment == HorizontalAlignment.CENTER.getCode() || alignment == HorizontalAlignment.RIGHT.getCode() ||
+		   alignment == HorizontalAlignment.FILL.getCode() || alignment == HorizontalAlignment.JUSTIFY.getCode() || alignment == HorizontalAlignment.CENTER_SELECTION.getCode()) {
+			style.setAlignment(HorizontalAlignment.forInt(alignment));
 		}
 		style.setWrapText(wrap);
 		
@@ -476,7 +463,7 @@ public class ExcelUtil {
 		return style;
 	}
 	
-	public Font createFont(String fontName, short weight, short height, IndexedColors color, byte underline){
+	public Font createFont(String fontName, boolean isBold, short height, IndexedColors color, byte underline){
 		Font font = workBook.createFont();
 		
 		if(height > 0 && height < 100) {
@@ -487,10 +474,8 @@ public class ExcelUtil {
 			font.setFontName(fontName);
 		}
 		
-		if(weight == Font.BOLDWEIGHT_NORMAL || weight == Font.BOLDWEIGHT_BOLD) {
-			font.setBoldweight(weight);
-		}
-		
+		font.setBold(isBold);
+
 		if(underline == Font.U_SINGLE || underline == Font.U_DOUBLE || underline == Font.U_SINGLE_ACCOUNTING  || underline == Font.U_DOUBLE_ACCOUNTING) {
 			font.setUnderline(underline);
 		}
@@ -507,7 +492,7 @@ public class ExcelUtil {
 	
 	public Hyperlink createHyperLink(String url) {
 		CreationHelper createHelper = workBook.getCreationHelper();
-		Hyperlink urlLink = createHelper.createHyperlink(Hyperlink.LINK_URL);
+		Hyperlink urlLink = createHelper.createHyperlink(HyperlinkType.URL);
 		urlLink.setAddress(url);
 		return urlLink;
 	}
@@ -517,17 +502,20 @@ public class ExcelUtil {
 		if(style == null) {
 			return;
 		}
+
+
+
 		if(topStyle > 0 && topStyle < 14) {
-			style.setBorderTop(topStyle);
+			style.setBorderTop(BorderStyle.valueOf(topStyle));
 		}
 		if(bottomStyle > 0 && bottomStyle < 14) {
-			style.setBorderBottom(bottomStyle);
+			style.setBorderBottom(BorderStyle.valueOf(bottomStyle));
 		}
 		if(leftStyle > 0 && leftStyle < 14) {
-			style.setBorderLeft(leftStyle);
+			style.setBorderLeft(BorderStyle.valueOf(leftStyle));
 		}
 		if(rightStyle > 0 && rightStyle < 14) {
-			style.setBorderRight(rightStyle);
+			style.setBorderRight(BorderStyle.valueOf(rightStyle));
 		}
 		if (topColor != null) {
 			style.setBottomBorderColor(topColor.getIndex());

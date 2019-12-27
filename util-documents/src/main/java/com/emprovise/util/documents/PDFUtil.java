@@ -1,25 +1,20 @@
 package com.emprovise.util.documents;
 
-import org.apache.pdfbox.exceptions.COSVisitorException;
+import org.apache.pdfbox.io.MemoryUsageSetting;
+import org.apache.pdfbox.multipdf.PDFMergerUtility;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.edit.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.apache.pdfbox.pdmodel.graphics.xobject.PDPixelMap;
-import org.apache.pdfbox.pdmodel.graphics.xobject.PDXObjectImage;
-import org.apache.pdfbox.util.PDFMergerUtility;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
-/**
- * @Deprecated after upgrading to PDFBox version 2.0
- */
-@Deprecated
 public class PDFUtil {
 
     private PDDocument document;
@@ -30,7 +25,7 @@ public class PDFUtil {
         // Create a document and add a page to it
         document = new PDDocument();
         // PDPage.PAGE_SIZE_LETTER is also possible
-        currentPage = new PDPage(PDPage.PAGE_SIZE_A4);
+        currentPage = new PDPage(PDRectangle.A4);
         document.addPage(currentPage);
     }
 
@@ -40,7 +35,7 @@ public class PDFUtil {
 
     public void createNewPage(String title) throws IOException {
         closeContentStream();
-        currentPage = new PDPage(PDPage.PAGE_SIZE_A4);
+        currentPage = new PDPage(PDRectangle.A4);
         document.addPage(currentPage);
     }
 
@@ -50,26 +45,26 @@ public class PDFUtil {
         PDRectangle rect = currentPage.getMediaBox();
         currentContentStream.beginText();
         currentContentStream.setFont(fontPlain, fontSize);
-        currentContentStream.moveTextPositionByAmount(xPosition, rect.getHeight() - fontSize*(lineNumber));
-        currentContentStream.drawString(text);
+        currentContentStream.newLineAtOffset(xPosition, rect.getHeight() - fontSize*(lineNumber));
+        currentContentStream.showText(text);
         currentContentStream.endText();
     }
 
     public void addImage(File imageFile) throws IOException {
         openContentStream();
         BufferedImage awtImage = ImageIO.read(imageFile);
-        PDXObjectImage ximage = new PDPixelMap(document, awtImage);
+        PDImageXObject pdfImage = PDImageXObject.createFromFileByExtension(imageFile, document);
         float scale = 0.5f; // alter this value to set the image size
-        currentContentStream.drawXObject(ximage, 100, 400, ximage.getWidth()*scale, ximage.getHeight()*scale);
+        currentContentStream.drawImage(pdfImage, 100, 400, pdfImage.getWidth()*scale, pdfImage.getHeight()*scale);
     }
 
-    public void savePdf(String outputFileName) throws IOException, COSVisitorException {
+    public void savePdf(String outputFileName) throws IOException {
         closeContentStream();
         document.save(outputFileName);
         document.close();
     }
 
-    public void mergePDFs(String destinationFile, File... pdfFiles) throws IOException, COSVisitorException {
+    public void mergePDFs(String destinationFile, File... pdfFiles) throws IOException {
 
         PDFMergerUtility pdfMerger = new PDFMergerUtility();
         pdfMerger.setDestinationFileName(destinationFile);
@@ -77,7 +72,7 @@ public class PDFUtil {
         for (File pdfFile : pdfFiles) {
             pdfMerger.addSource(pdfFile);
         }
-        pdfMerger.mergeDocuments();
+        pdfMerger.mergeDocuments(MemoryUsageSetting.setupMainMemoryOnly());
     }
 
     public void drawTable(String[][] content, float margin, float y, PDFont font, int fontSize) throws IOException {
@@ -86,7 +81,7 @@ public class PDFUtil {
         final int cols = content[0].length;
         final float rowHeight = 1.8f * fontSize;
         final float tableHeight = rowHeight * rows;
-        final float tableWidth = currentPage.findMediaBox().getWidth()-(2*margin);
+        final float tableWidth = currentPage.getMediaBox().getWidth()-(2*margin);
         final float colWidth = tableWidth/(float)cols;
         final float cellMargin=5f;
 
@@ -95,14 +90,14 @@ public class PDFUtil {
         //draw the rows
         float nexty = y ;
         for (int i = 0; i <= rows; i++) {
-            currentContentStream.drawLine(margin,nexty,margin+tableWidth,nexty);
+            drawLine(margin,nexty,margin+tableWidth,nexty);
             nexty-= rowHeight;
         }
 
         //draw the columns
         float nextx = margin;
         for (int i = 0; i <= cols; i++) {
-            currentContentStream.drawLine(nextx,y,nextx,y-tableHeight);
+            drawLine(nextx,y,nextx,y-tableHeight);
             nextx += colWidth;
         }
 
@@ -115,14 +110,20 @@ public class PDFUtil {
             for(int j = 0 ; j < content[i].length; j++){
                 String text = content[i][j];
                 currentContentStream.beginText();
-                currentContentStream.moveTextPositionByAmount(textx,texty);
-                currentContentStream.drawString(text);
+                currentContentStream.newLineAtOffset(textx,texty);
+                currentContentStream.showText(text);
                 currentContentStream.endText();
                 textx += colWidth;
             }
             texty-=rowHeight;
             textx = margin+cellMargin;
         }
+    }
+
+    private void drawLine(float xStart, float yStart, float xEnd, float yEnd) throws IOException {
+        currentContentStream.moveTo(xStart, yStart);
+        currentContentStream.lineTo(xEnd, yEnd);
+        currentContentStream.stroke();
     }
 
     private void openContentStream() throws IOException {
@@ -153,18 +154,16 @@ public class PDFUtil {
         final float FONT_SIZE = 10f;
         final float X0 = 5f;
         final float PADDING_BOTTOM_OF_DOCUMENT = 30f;
+        int count = 0;
 
-        java.util.List allPages = document.getDocumentCatalog().getAllPages();
-
-        for (int i = 0; i < allPages.size(); i++) {
-            PDPage page = ((PDPage) allPages.get(i));
-            footerContentStream = new PDPageContentStream(document, page, true, true);
+        for (PDPage page : document.getPages()) {
+            footerContentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true);
             footerContentStream.beginText();
             footerContentStream.setFont(PDType1Font.HELVETICA_BOLD, FONT_SIZE);
-            footerContentStream.moveTextPositionByAmount(X0, (PDPage.PAGE_SIZE_A4.getLowerLeftY() + PADDING_BOTTOM_OF_DOCUMENT));
-            footerContentStream.drawString(reportName);
-            footerContentStream.moveTextPositionByAmount((PDPage.PAGE_SIZE_A4.getUpperRightX() / 2), (PDPage.PAGE_SIZE_A4.getLowerLeftY()));
-            footerContentStream.drawString((i + 1) + " - " + allPages.size());
+            footerContentStream.newLineAtOffset(X0, (PDRectangle.A4.getLowerLeftY() + PADDING_BOTTOM_OF_DOCUMENT));
+            footerContentStream.showText(reportName);
+            footerContentStream.newLineAtOffset((PDRectangle.A4.getUpperRightX() / 2), (PDRectangle.A4.getLowerLeftY()));
+            footerContentStream.showText((count + 1) + " - " + document.getPages().getCount());
             footerContentStream.endText();
             footerContentStream.close();
         }

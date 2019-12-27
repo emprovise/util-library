@@ -23,7 +23,7 @@ public class JsonConversionUtil {
     public JsonNode convertXmlToJsonNode(String xmlString) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         JsonFactory factory = mapper.getFactory();
-        JsonParser jsonParser = factory.createJsonParser(xmlString);
+        JsonParser jsonParser = factory.createParser(xmlString);
         return mapper.readTree(jsonParser);
     }
 

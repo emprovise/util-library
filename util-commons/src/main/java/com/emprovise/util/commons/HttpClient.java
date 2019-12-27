@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static org.apache.commons.lang.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * HTTP Client Utility to call the Server and get the server response.
@@ -92,12 +92,12 @@ public class HttpClient {
                 .setSocketTimeout(remoteSocketTimeout)
                 .setConnectTimeout(remoteConnectionTimeout)
                 .setConnectionRequestTimeout(connectionRequestTimeout)
-                .setStaleConnectionCheckEnabled(true)
                 .build();
 
         PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
         connManager.setMaxTotal(100);
         connManager.setDefaultMaxPerRoute(10);
+        connManager.setValidateAfterInactivity(5000);
 
         HttpClientBuilder httpClientBuilder = HttpClients.custom();
         httpClientBuilder.setConnectionManager(connManager);
